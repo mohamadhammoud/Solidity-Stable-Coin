@@ -8,8 +8,8 @@ import {DepositorCoin} from "./DepositorCoin/DepositorCoin.sol";
 import {Oracle} from "./Oracle/Oracle.sol";
 
 contract StableCoin is ERC20 {
-    DepositorCoin _depositorCoin;
-    Oracle oracle;
+    DepositorCoin private _depositorCoin;
+    Oracle private oracle;
 
     uint16 PRECISION = 1e4;
     uint16 feeRatePercentage; // 2 decimals
@@ -87,17 +87,6 @@ contract StableCoin is ERC20 {
         _depositorCoin.mint(msg.sender, mintDepositorCointAmount);
     }
 
-    function _getFee(uint256 amount) private returns (uint256) {
-        bool hasDepositors = address(_depositorCoin) != address(0) &&
-            _depositorCoin.totalSupply() != 0;
-
-        if (hasDepositors) {
-            return (amount * feeRatePercentage) / PRECISION;
-        }
-
-        return 0;
-    }
-
     function withdrawCollateral(uint256 depositorCoinAmount) external {
         require(
             _depositorCoin.balanceOf(msg.sender) > depositorCoinAmount,
@@ -118,6 +107,25 @@ contract StableCoin is ERC20 {
         (bool success, ) = msg.sender.call{value: ethAmountToRefund}("");
 
         require(success, "STC: refund Eth transfer failed");
+    }
+
+    function getDepositorCoin() external view returns (address) {
+        return address(_depositorCoin);
+    }
+
+    function getOracle() external view returns (address) {
+        return address(oracle);
+    }
+
+    function _getFee(uint256 amount) private returns (uint256) {
+        bool hasDepositors = address(_depositorCoin) != address(0) &&
+            _depositorCoin.totalSupply() != 0;
+
+        if (hasDepositors) {
+            return (amount * feeRatePercentage) / PRECISION;
+        }
+
+        return 0;
     }
 
     function _getDificitOrSurplusBalanceInUsd() private returns (int256) {
