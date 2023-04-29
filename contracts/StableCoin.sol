@@ -82,7 +82,7 @@ contract StableCoin is ERC20 {
         uint newInitialSurpusInEth = msg.value - dificitInEth;
         uint newInitialSurpusInUsd = newInitialSurpusInEth * usdInEthPrice;
 
-        _depositorCoin = new DepositorCoin();
+        _depositorCoin = new DepositorCoin("Depositor Coin", "DPC");
         uint256 mintDepositorCointAmount = newInitialSurpusInUsd;
         _depositorCoin.mint(msg.sender, mintDepositorCointAmount);
     }
@@ -125,7 +125,7 @@ contract StableCoin is ERC20 {
 
         uint256 ethBalanceInUSD = ethBalance * oracle.getPrice();
 
-        int dificitOrSurplus = ethBalanceInUSD - totalSupply();
+        int dificitOrSurplus = int(ethBalanceInUSD - totalSupply());
 
         return dificitOrSurplus;
     }
