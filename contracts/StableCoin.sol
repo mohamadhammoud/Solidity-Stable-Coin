@@ -47,7 +47,7 @@ contract StableCoin is ERC20 {
         require(success, "STC: refund Eth transfer failed");
     }
 
-    function _getFee(uint256 amount) private {
+    function _getFee(uint256 amount) private returns (uint256) {
         bool hasDepositors = address(_depositorCoin) != address(0) &&
             _depositorCoin.totalSupply() != 0;
 
