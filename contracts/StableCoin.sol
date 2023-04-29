@@ -5,32 +5,38 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 import {DepositorCoin} from "./DepositorCoin/DepositorCoin.sol";
 
+import {Oracle} from "./Oracle/Oracle.sol";
+
 contract StableCoin is ERC20 {
     DepositorCoin _depositorCoin;
-
-    uint16 ETH_PRICE_PER_USD = 2000;
+    Oracle oracle;
 
     uint16 PRECISION = 1e4;
     uint16 feeRatePercentage; // 2 decimals
 
-    constructor(name, symbol, feeRatePercentage_) ERC20(name, symbol) {
-        owner = msg.sender;
-
+    constructor(
+        string memory name,
+        string memory symbol,
+        uint16 feeRatePercentage_,
+        Oracle oracle_
+    ) ERC20(name, symbol) {
         feeRatePercentage = feeRatePercentage_;
+
+        oracle = oracle_;
     }
 
     function mint() external payable {
         uint256 fee = _getFee(msg.value);
         uint256 remainingEth = msg.value - fee;
 
-        uint256 mintStableCointAmount = remainingEth * ETH_PRICE_PER_USD;
+        uint256 mintStableCointAmount = remainingEth * oracle.getPrice();
         _mint(msg.sender, mintStableCointAmount);
     }
 
     function burn(uint256 burnStableCoinAmount) external {
         _burn(msg.sender, burnStableCoinAmount);
 
-        uint256 refundingEth = burnStableCoinAmount / ETH_PRICE_PER_USD;
+        uint256 refundingEth = burnStableCoinAmount / oracle.getPrice();
 
         uint256 fee = _getFee(refundingEth);
 
@@ -38,7 +44,7 @@ contract StableCoin is ERC20 {
 
         (bool success, ) = msg.sender.call{value: remainingEth}("");
 
-        requier(success, "STC: refund Eth transfer failed");
+        require(success, "STC: refund Eth transfer failed");
     }
 
     function _getFee(uint256 amount) private {
@@ -46,7 +52,7 @@ contract StableCoin is ERC20 {
             _depositorCoin.totalSupply() != 0;
 
         if (hasDepositors) {
-            return (amount * feePercentage) / PRECISION;
+            return (amount * feeRatePercentage) / PRECISION;
         }
 
         return 0;
