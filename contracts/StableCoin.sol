@@ -13,6 +13,7 @@ contract StableCoin is ERC20 {
 
     uint16 PRECISION = 1e4;
     uint16 feeRatePercentage; // 2 decimals
+    uint16 INITIAL_COLLATERAL_RATIO_PERCENTAGE = 10; // 10%
 
     constructor(
         string memory name,
@@ -60,6 +61,29 @@ contract StableCoin is ERC20 {
 
             _depositorCoin.mint(msg.sender, depositorCoinAmount);
         }
+
+        uint256 dificitInUsd = uint256(dificitOrSurplusBalanceInUsd * -1);
+        uint256 usdInEthPrice = oracle.getPrice();
+
+        uint256 dificitInEth = dificitInUsd / usdInEthPrice;
+
+        uint256 requiredInitialSurplusInUsd = (dificitInUsd *
+            INITIAL_COLLATERAL_RATIO_PERCENTAGE) / 100;
+
+        uint256 requiredInitialSurplusInEth = requiredInitialSurplusInUsd /
+            usdInEthPrice;
+
+        require(
+            msg.value >= dificitInEth + requiredInitialSurplusInEth,
+            "STC: Initial collateral ration not met"
+        );
+
+        uint newInitialSurpusInEth = msg.value - dificitInEth;
+        uint newInitialSurpusInUsd = newInitialSurpusInEth * usdInEthPrice;
+
+        _depositorCoin = new DepositorCoin();
+        uint256 mintDepositorCointAmount = newInitialSurpusInUsd;
+        _depositorCoin.mint(msg.sender, mintDepositorCointAmount);
     }
 
     function _getFee(uint256 amount) private returns (uint256) {
