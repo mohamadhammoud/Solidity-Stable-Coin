@@ -47,6 +47,21 @@ contract StableCoin is ERC20 {
         require(success, "STC: refund Eth transfer failed");
     }
 
+    function depositCollateral() external payable {
+        int256 dificitOrSurplusBalanceInUsd = _getDificitOrSurplusBalanceInUsd();
+
+        if (dificitOrSurplusBalanceInUsd > 0) {
+            uint256 surplusInUsd = uint256(dificitOrSurplusBalanceInUsd);
+
+            uint256 dpcPriceInUsd = _getDPCPriceinUsd(surplusInUsd);
+
+            uint256 depositorCoinAmount = ((msg.value * dpcPriceInUsd) /
+                oracle.getPrice());
+
+            _depositorCoin.mint(msg.sender, depositorCoinAmount);
+        }
+    }
+
     function _getFee(uint256 amount) private returns (uint256) {
         bool hasDepositors = address(_depositorCoin) != address(0) &&
             _depositorCoin.totalSupply() != 0;
@@ -56,5 +71,19 @@ contract StableCoin is ERC20 {
         }
 
         return 0;
+    }
+
+    function _getDificitOrSurplusBalanceInUsd() private returns (int256) {
+        uint256 ethBalance = address(this).balance - msg.value;
+
+        uint256 ethBalanceInUSD = ethBalance * oracle.getPrice();
+
+        int dificitOrSurplus = ethBalanceInUSD - totalSupply();
+
+        return dificitOrSurplus;
+    }
+
+    function _getDPCPriceinUsd(uint256 surplusUsd) private returns (uint256) {
+        return _depositorCoin.totalSupply() / surplusUsd;
     }
 }
