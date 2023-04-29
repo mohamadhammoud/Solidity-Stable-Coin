@@ -24,10 +24,10 @@ const config = {
     ],
   },
   networks: {
-    mumbai: {
-      url: MUMBAI_URL,
-      accounts: [`${PRIVATE_KEY}`],
-    },
+    // mumbai: {
+    //   url: MUMBAI_URL,
+    //   accounts: [`${PRIVATE_KEY}`],
+    // },
   },
   etherscan: { apiKey: `${ETHERSCAN_API_KEY}` },
 };
