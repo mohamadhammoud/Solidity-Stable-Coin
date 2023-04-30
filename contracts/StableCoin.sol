@@ -12,8 +12,8 @@ contract StableCoin is ERC20 {
     Oracle private oracle;
 
     uint16 PRECISION = 1e4;
-    uint16 feeRatePercentage; // 2 decimals
-    uint16 INITIAL_COLLATERAL_RATIO_PERCENTAGE = 10; // 10%
+    uint16 public feeRatePercentage; // 2 decimals
+    uint16 public INITIAL_COLLATERAL_RATIO_PERCENTAGE = 10; // 10%
 
     constructor(
         string memory name,
@@ -76,7 +76,7 @@ contract StableCoin is ERC20 {
 
         require(
             msg.value >= dificitInEth + requiredInitialSurplusInEth,
-            "STC: Initial collateral ration not met"
+            "STC: Initial collateral ratio not met"
         );
 
         uint newInitialSurpusInEth = msg.value - dificitInEth;
@@ -84,12 +84,13 @@ contract StableCoin is ERC20 {
 
         _depositorCoin = new DepositorCoin("Depositor Coin", "DPC");
         uint256 mintDepositorCointAmount = newInitialSurpusInUsd;
+
         _depositorCoin.mint(msg.sender, mintDepositorCointAmount);
     }
 
     function withdrawCollateral(uint256 depositorCoinAmount) external {
         require(
-            _depositorCoin.balanceOf(msg.sender) > depositorCoinAmount,
+            _depositorCoin.balanceOf(msg.sender) >= depositorCoinAmount,
             "STC: Insufficient DPC"
         );
 
@@ -133,7 +134,7 @@ contract StableCoin is ERC20 {
 
         uint256 ethBalanceInUSD = ethBalance * oracle.getPrice();
 
-        int dificitOrSurplus = int(ethBalanceInUSD - totalSupply());
+        int dificitOrSurplus = int(ethBalanceInUSD) - int(totalSupply());
 
         return dificitOrSurplus;
     }
